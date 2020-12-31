@@ -5,6 +5,7 @@ import {
   useMutation,
   useQuery
 } from 'react-query'
+import './index.css'
 
 const queryClient = new QueryClient()
 
@@ -14,16 +15,22 @@ const queryClient = new QueryClient()
 function App() {
   const { data } = useQuery('foo', fakeGet)
   const { mutate } = useMutation(fakePost, {
-
     onSuccess() {
       queryClient.invalidateQueries('foo')
     }
   })
-  
+
   return (
-    <input value={data ?? ''}
-      onChange={(event) => mutate(event.target.value)}
-    ></input>
+    <>
+      <label>
+        Type in something:{' '}
+        <input
+          value={data ?? ''}
+          onChange={(event) => mutate(event.target.value)}
+        ></input>
+        <div><small>We persist automatically to the server as you type</small></div>
+      </label>
+    </>
   )
 }
 
@@ -31,10 +38,10 @@ let serverState = ''
 
 /** GETs a value from a server with a random delay */
 function fakeGet() {
-  const {delayMs, delaySec} = getDelay()
+  const { delayMs, delaySec } = getDelay()
   const message = `GETting ${serverState} from the server with a delay of ${delaySec}`
   console.log(`started ${message}`)
-  return new Promise<string>(res => {
+  return new Promise<string>((res) => {
     setTimeout(() => {
       console.log(`finished ${message}`)
       res(serverState)
@@ -44,16 +51,16 @@ function fakeGet() {
 
 /** POSTs a value to a server with a random delay */
 function fakePost(value: string) {
-  const {delayMs, delaySec} = getDelay()
+  const { delayMs, delaySec } = getDelay()
   const message = `POSTing ${value} to the server (this will overwrite ${serverState} on the server) with a delay of ${delaySec}`
-    console.log(`started ${message}`)
-    return new Promise<string>(res => {
-      setTimeout(() => {
-        console.log(`finished ${message}`)
-        serverState = value
-        res(serverState)
-      }, delayMs)
-    })
+  console.log(`started ${message}`)
+  return new Promise<string>((res) => {
+    setTimeout(() => {
+      console.log(`finished ${message}`)
+      serverState = value
+      res(serverState)
+    }, delayMs)
+  })
 }
 
 function getDelay() {
