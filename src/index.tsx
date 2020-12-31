@@ -1,17 +1,72 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import ReactDOM from 'react-dom'
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+  useQuery
+} from 'react-query'
+
+const queryClient = new QueryClient()
+
+/**
+ * This whole app is about posting a single string value to the server.
+ */
+function App() {
+  const { data } = useQuery('foo', fakeGet)
+  const { mutate } = useMutation(fakePost, {
+
+    onSuccess() {
+      queryClient.invalidateQueries('foo')
+    }
+  })
+  
+  return (
+    <input value={data ?? ''}
+      onChange={(event) => mutate(event.target.value)}
+    ></input>
+  )
+}
+
+let serverState = ''
+
+/** GETs a value from a server with a random delay */
+function fakeGet() {
+  const {delayMs, delaySec} = getDelay()
+  const message = `GETting ${serverState} from the server with a delay of ${delaySec}`
+  console.log(`started ${message}`)
+  return new Promise<string>(res => {
+    setTimeout(() => {
+      console.log(`finished ${message}`)
+      res(serverState)
+    }, delayMs)
+  })
+}
+
+/** POSTs a value to a server with a random delay */
+function fakePost(value: string) {
+  const {delayMs, delaySec} = getDelay()
+  const message = `POSTing ${value} to the server (this will overwrite ${serverState} on the server) with a delay of ${delaySec}`
+    console.log(`started ${message}`)
+    return new Promise<string>(res => {
+      setTimeout(() => {
+        console.log(`finished ${message}`)
+        serverState = value
+        res(serverState)
+      }, delayMs)
+    })
+}
+
+function getDelay() {
+  const delayMs = Math.random() * 5000
+  return {
+    delayMs,
+    delaySec: `${Math.round(delayMs / 100) / 10}s`
+  }
+}
 
 ReactDOM.render(
-  <React.StrictMode>
+  <QueryClientProvider client={queryClient}>
     <App />
-  </React.StrictMode>,
+  </QueryClientProvider>,
   document.getElementById('root')
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+)
